@@ -1,0 +1,8 @@
+[
+    {"isCheck":false,"id": "2","name": "xingming","zhushi": "姓名","leixing":4,"tuomin":false,"tmgz":""},
+    {"isCheck":true,"id": "3","name": "IDCard","zhushi": "身份证","leixing":4,"tuomin":false,"tmgz":""},
+    {"isCheck":false,"id": "4","name": "phone","zhushi": "手机","leixing":4,"tuomin":true,"tmgz":"从第四位开始脱敏，脱敏四位数"},
+    {"isCheck":false,"id": "5","name": "hukou","zhushi": "户口","leixing":4,"tuomin":false,"tmgz":""},
+    {"isCheck":false,"id": "6","name": "zanzhuzheng","zhushi": "暂住证","leixing":4,"tuomin":false,"tmgz":""},
+    {"isCheck":false,"id": "7","name": "zhifubao","zhushi": "支付宝","leixing":4,"tuomin":false,"tmgz":""}
+]

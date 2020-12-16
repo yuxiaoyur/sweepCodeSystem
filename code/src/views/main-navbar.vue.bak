@@ -1,0 +1,197 @@
+<template>
+  <nav class="site-navbar" :class="'site-navbar--' + navbarLayoutType">
+    <div class="site-navbar__header">
+      <h1 class="site-navbar__brand" @click="$router.push({ name: 'home' })">
+        <a class="site-navbar__brand-lg" href="javascript:;">成都智慧治理</a>
+        <a class="site-navbar__brand-mini" href="javascript:;">智慧</a>
+      </h1>
+    </div>
+    <div class="site-navbar__body clearfix">
+      <el-menu
+        class="site-navbar__menu"
+        mode="horizontal">
+        <el-menu-item class="site-navbar__switch" index="0" @click="sidebarFold = !sidebarFold">
+          <icon-svg name="zhedie"></icon-svg>
+        </el-menu-item>
+      </el-menu>
+      <div class="header-avator-con">
+      <!-- 
+        <div @click="lockScreen" class="lock-screen-btn-con">
+          <Tooltip content="锁屏" placement="bottom">
+            <Icon type="locked" :size="20"></Icon>
+          </Tooltip>
+        </div>
+        <div @click="showMessage" class="message-con">
+          <Tooltip :content="messageCount > 0 ? '有' + messageCount + '条未读消息' : '无未读消息'" placement="bottom">
+            <Badge :count="messageCount" dot>
+              <Icon type="ios-bell" :size="22"></Icon>
+            </Badge>
+          </Tooltip>
+	  -->
+        </div>
+        <div class="user-dropdown-menu-con">
+          <Row type="flex" justify="end" align="middle" class="user-dropdown-innercon">
+            <Dropdown trigger="click" @on-click="handleClickUserDropdown">
+              <a href="javascript:void(0)">
+                <span class="main-user-name">{{ userName }}</span>
+                <Icon type="arrow-down-b"></Icon>
+              </a>
+              <DropdownMenu slot="list">
+                <!--<DropdownItem name="ownSpace">个人中心</DropdownItem>-->
+                <DropdownItem name="changePwd">修改密码</DropdownItem>
+                <DropdownItem name="loginout" divided>退出登录</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            <Avatar :src="avatorPath" style="background: #619fe7;margin-left: 10px;"></Avatar>
+          </Row>
+        </div>
+      </div>
+    </div>
+    <!-- 弹窗, 修改密码 -->
+    <update-password v-if="updatePassowrdVisible" ref="updatePassowrd"></update-password>
+  </nav>
+</template>
+
+<script>
+  import UpdatePassword from './main-navbar-update-password'
+
+  export default {
+    data () {
+      return {
+        updatePassowrdVisible: false,
+        showFullScreenBtn: window.navigator.userAgent.indexOf('MSIE') < 0,
+        messageCount: 0,
+        lockScreenSize: 0
+      }
+    },
+    components: {
+      UpdatePassword
+    },
+    computed: {
+      navbarLayoutType: {
+        get () {
+          return this.$store.state.common.navbarLayoutType
+        }
+      },
+      sidebarFold: {
+        get () {
+          return this.$store.state.common.sidebarFold
+        },
+        set (val) {
+          this.$store.commit('common/updateSidebarFold', val)
+        }
+      },
+      mainTabs: {
+        get () {
+          return this.$store.state.common.mainTabs
+        },
+        set (val) {
+          this.$store.commit('common/updateMainTabs', val)
+        }
+      },
+      userName: {
+        get () {
+          return this.$store.state.user.name
+        }
+      },
+      avatorPath () {
+        return this.$store.state.user.avator
+      }
+    },
+    methods: {
+      init () {
+        let messageCount = 3
+        this.messageCount = messageCount.toString()
+      },
+      showMessage () {
+        this.$router.push({name: 'message'})
+      },
+      lockScreen () {
+      	
+      	this.$http({
+          url: this.$http.adornUrl('/lock'),
+          method: 'get',
+          params: this.$http.adornParams()
+        }).then(({data}) => {
+        	if(data == 'lock'){
+        		let lockScreenBack = document.getElementById('lock_screen_back')
+		        lockScreenBack.style.transition = 'all 3s'
+		        lockScreenBack.style.zIndex = 1900
+		        lockScreenBack.style.boxShadow =
+		          '0 0 0 ' + this.lockScreenSize + 'px #667aa6 inset'
+		        this.showUnlock = true
+		        sessionStorage.setItem("lock","lock")
+		        this.$cookie.set('last_page_name', this.$route.name) // 本地存储锁屏之前打开的页面以便解锁后打开//this.$store.commit('lock');
+		        setTimeout(() => {
+		          lockScreenBack.style.transition = 'all 0s'
+		          this.$router.push({
+		            name: 'locking'
+		          })
+		        }, 800)
+        	}else{
+        		this.$message.error("锁屏失败")
+        	}
+          
+        })
+      	
+        
+      },
+      handleClickUserDropdown (name) {
+        if (name === 'ownSpace') {
+          this.$router.push({name: 'theme'})
+        } else if (name === 'changePwd') {
+          this.updatePassowrdVisible = true
+          this.$nextTick(() => {
+            this.$refs.updatePassowrd.init()
+          })
+        } else if (name === 'loginout') {
+          this.logoutHandle()
+        }
+      },
+      // 退出
+      logoutHandle () {
+        this.$confirm(`确定进行[退出]操作?`, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+          .then(() => {
+            this.$http({
+              url: this.$http.adornUrl('/logout'),
+              method: 'get',
+              params: this.$http.adornParams()
+            }).then(({data}) => {
+              if (data && data=='logout') {
+                this.$cookie.delete('token')
+                this.$router.options.isAddDynamicMenuRoutes = false
+                this.$router.push({name: 'login'})
+              }
+            })
+          })
+          .catch(() => {
+          })
+      }
+    },
+    watch: {},
+    mounted () {
+      this.init()
+      // 锁屏相关
+      let lockScreenBack = document.getElementById('lock_screen_back')
+      let x = document.body.clientWidth
+      let y = document.body.clientHeight
+      let r = Math.sqrt(x * x + y * y)
+      let size = parseInt(r)
+      this.lockScreenSize = size
+      window.addEventListener('resize', () => {
+        let x = document.body.clientWidth
+        let y = document.body.clientHeight
+        let r = Math.sqrt(x * x + y * y)
+        let size = parseInt(r)
+        this.lockScreenSize = size
+        lockScreenBack.style.transition = 'all 0s'
+        lockScreenBack.style.width = lockScreenBack.style.height = size + 'px'
+      })
+      lockScreenBack.style.width = lockScreenBack.style.height = size + 'px'
+    }
+  }
+</script>
